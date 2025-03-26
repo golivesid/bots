@@ -8,7 +8,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 BOT_TOKEN = os.getenv('8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU')
 
 # GitHub repository details for channels
-GITHUB_REPO_OWNER = 'your_github_username'
+GITHUB_REPO_OWNER = 'seeubot'
 GITHUB_REPO_NAME = 'bots'
 GITHUB_FILE_PATH = 'channels.json'
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')  # Optional, for private repos
