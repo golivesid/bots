@@ -9,7 +9,7 @@ def get_bot_token():
     """
     Retrieve bot token from environment variables with robust error handling
     """
-    token = os.getenv('TELEGRAM_BOT_TOKEN')
+    token = os.getenv('8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU')
     if not token:
         print("Error: TELEGRAM_BOT_TOKEN environment variable is not set!")
         print("Please set the Telegram Bot Token obtained from @BotFather")
