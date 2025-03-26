@@ -5,16 +5,16 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 
 # Replace with your actual bot token
-BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+BOT_TOKEN = os.getenv('8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU')
 
 # GitHub repository details for channels
 GITHUB_REPO_OWNER = 'your_github_username'
-GITHUB_REPO_NAME = 'tv-channels'
+GITHUB_REPO_NAME = 'bots'
 GITHUB_FILE_PATH = 'channels.json'
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')  # Optional, for private repos
 
 # Channel ID where users must join
-REQUIRED_CHANNEL_ID = '@your_channel_username'
+REQUIRED_CHANNEL_ID = '@terao2'
 
 def fetch_channels_from_github():
     """
