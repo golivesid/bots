@@ -1,0 +1,5 @@
+{
+    "cnn": "https://example.com/cnn_stream",
+    "bbc": "https://example.com/bbc_stream",
+    "espn": "https://example.com/espn_stream"
+}
