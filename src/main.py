@@ -1,20 +1,29 @@
 import os
+import sys
 import requests
 import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 
-# Replace with your actual bot token
-BOT_TOKEN = os.getenv('8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU')
+def get_bot_token():
+    """
+    Retrieve bot token from environment variables with robust error handling
+    """
+    token = os.getenv('TELEGRAM_BOT_TOKEN')
+    if not token:
+        print("Error: TELEGRAM_BOT_TOKEN environment variable is not set!")
+        print("Please set the Telegram Bot Token obtained from @BotFather")
+        sys.exit(1)
+    return token
 
 # GitHub repository details for channels
-GITHUB_REPO_OWNER = 'seeubot'
-GITHUB_REPO_NAME = 'bots'
-GITHUB_FILE_PATH = 'channels.json'
+GITHUB_REPO_OWNER = os.getenv('GITHUB_REPO_OWNER', 'seeubot')
+GITHUB_REPO_NAME = os.getenv('GITHUB_REPO_NAME', 'bots')
+GITHUB_FILE_PATH = os.getenv('GITHUB_FILE_PATH', 'channels.json')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')  # Optional, for private repos
 
 # Channel ID where users must join
-REQUIRED_CHANNEL_ID = '@terao2'
+REQUIRED_CHANNEL_ID = os.getenv('REQUIRED_CHANNEL_ID', '@your_channel_username')
 
 def fetch_channels_from_github():
     """
@@ -128,6 +137,9 @@ class TelegramTVBot:
 
     def run(self):
         """Set up and run the bot"""
+        # Add debug print to verify token is not empty
+        print(f"Using bot token: {self.token[:4]}{'*' * (len(self.token) - 4)}")
+        
         application = Application.builder().token(self.token).build()
 
         # Register handlers
@@ -140,37 +152,12 @@ class TelegramTVBot:
         application.run_polling(drop_pending_updates=True)
 
 def main():
-    bot = TelegramTVBot(BOT_TOKEN)
+    # Get the bot token
+    bot_token = get_bot_token()
+    
+    # Create and run the bot
+    bot = TelegramTVBot(bot_token)
     bot.run()
 
 if __name__ == '__main__':
     main()
-
-# Example channels.json file to be hosted on GitHub
-"""
-{
-    "cnn": "https://example.com/cnn_stream",
-    "bbc": "https://example.com/bbc_stream",
-    "espn": "https://example.com/espn_stream"
-}
-"""
-
-# requirements.txt
-"""
-python-telegram-bot==20.7
-requests==2.31.0
-"""
-
-# Dockerfile for Koyeb
-"""
-FROM python:3.9-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-CMD ["python", "bot.py"]
-"""
