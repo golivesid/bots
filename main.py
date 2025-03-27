@@ -1,169 +1,159 @@
 import os
+from flask import Flask, request
 import telebot
 import requests
-from telebot import TeleBot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import logging
-from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
-# Logging Configuration
-logging.basicConfig(
-    level=logging.INFO, 
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Load environment variables
+load_dotenv()
 
-# API Configuration
-CRICAPI_API_KEY = '7c96d07c-0e63-4d5d-a2b4-dc9520ba9492'  # Get from cricapi.com
-BOT_TOKEN = '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU'
+# Flask Web Server for Webhook
+app = Flask(__name__)
 
-class IPLLiveScoreBot:
-    def __init__(self, bot_token, api_key):
-        self.bot = TeleBot(bot_token)
-        self.api_key = api_key
-        self._register_handlers()
+# Telegram Bot Configuration
+BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+CRICKET_API_KEY = os.getenv('CRICKET_API_KEY')
+WEBHOOK_HOST = os.getenv('WEBHOOK_URL', 'https://your-koyeb-app-url.koyeb.app')
 
-    def _register_handlers(self):
+# Initialize Telegram Bot
+bot = telebot.TeleBot(BOT_TOKEN)
+
+class IPLScoreBot:
+    def __init__(self, bot_token, cricket_api_key):
+        self.bot = bot
+        self.cricket_api_key = cricket_api_key
+        self.register_handlers()
+
+    def register_handlers(self):
         @self.bot.message_handler(commands=['start'])
         def send_welcome(message):
             welcome_text = """
-🏏 IPL Live Score Bot 🏆
-
-Available Commands:
-/matches - Current Live Matches
-/upcoming - Upcoming Matches
-/help - Bot Instructions
+            🏏 IPL Live Score Bot 🏏
+            
+            Available Commands:
+            /live_matches - Get current live matches
+            /score <match_id> - Get live score for a specific match
+            /help - Show help menu
             """
             self.bot.reply_to(message, welcome_text)
 
-        @self.bot.message_handler(commands=['matches'])
-        def live_matches(message):
-            matches = self.get_live_matches()
-            if matches:
-                response = "🔴 Live Matches:\n\n"
+        @self.bot.message_handler(commands=['live_matches'])
+        def list_live_matches(message):
+            try:
+                # Fetch live matches (similar to previous implementation)
+                matches = self.get_live_matches()
+                
+                if not matches:
+                    self.bot.reply_to(message, "No live matches at the moment.")
+                    return
+                
+                response = "🏏 Live Matches:\n\n"
                 for match in matches:
-                    response += self.format_match_details(match)
-                self.bot.send_message(message.chat.id, response, parse_mode='HTML')
-            else:
-                self.bot.reply_to(message, "No live matches at the moment.")
+                    response += f"Match ID: {match['unique_id']}\n"
+                    response += f"{match['team-1']} vs {match['team-2']}\n"
+                    response += f"Status: {match.get('matchStarted', 'Not Started')}\n\n"
+                
+                self.bot.reply_to(message, response)
+            
+            except Exception as e:
+                self.bot.reply_to(message, f"Error fetching matches: {str(e)}")
 
-        @self.bot.message_handler(commands=['upcoming'])
-        def upcoming_matches(message):
-            matches = self.get_upcoming_matches()
-            if matches:
-                response = "🗓️ Upcoming Matches:\n\n"
-                for match in matches:
-                    response += self.format_upcoming_match(match)
-                self.bot.send_message(message.chat.id, response, parse_mode='HTML')
-            else:
-                self.bot.reply_to(message, "No upcoming matches found.")
+        @self.bot.message_handler(commands=['score'])
+        def get_match_score(message):
+            try:
+                match_id = message.text.split(' ')[1] if len(message.text.split(' ')) > 1 else None
+                
+                if not match_id:
+                    self.bot.reply_to(message, "Please provide a match ID. Use /live_matches to get match IDs.")
+                    return
+                
+                score_details = self.get_live_score(match_id)
+                
+                if not score_details:
+                    self.bot.reply_to(message, "Unable to fetch score. Check the match ID.")
+                    return
+                
+                response = self.format_score_response(score_details)
+                self.bot.reply_to(message, response)
+            
+            except Exception as e:
+                self.bot.reply_to(message, f"Error fetching score: {str(e)}")
 
     def get_live_matches(self):
-        """
-        Fetch live cricket matches using CricAPI
-        """
         try:
-            url = f"https://cricapi.com/api/matches?apikey={self.api_key}"
-            response = requests.get(url)
+            url = "https://cricapi.com/api/matches"
+            params = {'apikey': self.cricket_api_key}
+            
+            response = requests.get(url, params=params)
             data = response.json()
             
-            # Filter for live IPL matches
             live_matches = [
                 match for match in data.get('matches', []) 
-                if match.get('matchStarted') and not match.get('matchEnded') 
-                and 'IPL' in match.get('type', '')
+                if match.get('matchStarted') and 'IPL' in match.get('type', '')
             ]
             
             return live_matches
+        
         except Exception as e:
-            logger.error(f"Error fetching live matches: {e}")
+            print(f"Error fetching live matches: {e}")
             return []
 
-    def get_match_score(self, match_id):
-        """
-        Get detailed score for a specific match
-        """
+    def get_live_score(self, match_id):
         try:
-            url = f"https://cricapi.com/api/cricketScore?apikey={self.api_key}&unique_id={match_id}"
-            response = requests.get(url)
+            url = "https://cricapi.com/api/cricketScore"
+            params = {
+                'apikey': self.cricket_api_key,
+                'unique_id': match_id
+            }
+            
+            response = requests.get(url, params=params)
             return response.json()
+        
         except Exception as e:
-            logger.error(f"Error fetching match score: {e}")
-            return {}
+            print(f"Error fetching live score: {e}")
+            return None
 
-    def get_upcoming_matches(self):
-        """
-        Fetch upcoming cricket matches
-        """
+    def format_score_response(self, score_details):
         try:
-            url = f"https://cricapi.com/api/matches?apikey={self.api_key}"
-            response = requests.get(url)
-            data = response.json()
+            response = "🏏 Live Score Update 🏏\n\n"
+            response += f"Match: {score_details.get('team-1', 'Team 1')} vs {score_details.get('team-2', 'Team 2')}\n"
+            response += f"Score: {score_details.get('score', 'N/A')}\n"
+            response += f"Status: {score_details.get('matchStarted', 'Not Started')}\n"
+            response += f"Innings: {score_details.get('innings-name', 'N/A')}\n"
             
-            # Filter for upcoming IPL matches
-            upcoming_matches = [
-                match for match in data.get('matches', []) 
-                if not match.get('matchStarted') 
-                and 'IPL' in match.get('type', '')
-            ]
-            
-            return upcoming_matches
+            return response
+        
         except Exception as e:
-            logger.error(f"Error fetching upcoming matches: {e}")
-            return []
+            print(f"Error formatting score: {e}")
+            return "Unable to format score details."
 
-    def format_match_details(self, match):
-        """
-        Format live match details
-        """
-        try:
-            # Fetch detailed score
-            score_details = self.get_match_score(match.get('unique_id'))
-            
-            match_info = (
-                f"🏏 <b>{match.get('team-1', 'Team 1')} vs {match.get('team-2', 'Team 2')}</b>\n"
-                f"📅 {match.get('date', 'Date Not Available')}\n"
-            )
-            
-            # Add score if available
-            if score_details and 'score' in score_details:
-                match_info += f"📊 Score: {score_details.get('score', 'Score Not Available')}\n"
-            
-            match_info += f"🏆 Type: {match.get('type', 'Unknown')}\n\n"
-            
-            return match_info
-        except Exception as e:
-            logger.error(f"Error formatting match details: {e}")
-            return ""
+# Initialize Bot
+ipl_bot = IPLScoreBot(BOT_TOKEN, CRICKET_API_KEY)
 
-    def format_upcoming_match(self, match):
-        """
-        Format upcoming match details
-        """
-        return (
-            f"🏏 <b>{match.get('team-1', 'Team 1')} vs {match.get('team-2', 'Team 2')}</b>\n"
-            f"📅 {match.get('date', 'Date Not Available')}\n"
-            f"🏆 Type: {match.get('type', 'Unknown')}\n\n"
-        )
+# Webhook Route
+@app.route(f'/{BOT_TOKEN}', methods=['POST'])
+def webhook():
+    """Process webhook calls"""
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "OK", 200
 
-    def start_bot(self):
-        """
-        Start the Telegram bot
-        """
-        logger.info("IPL Live Score Bot Started!")
-        self.bot.polling(none_stop=True)
+# Set Webhook
+@app.route('/set_webhook', methods=['GET', 'POST'])
+def set_webhook():
+    """Set webhook for Telegram Bot"""
+    webhook_url = f"{WEBHOOK_HOST}/{BOT_TOKEN}"
+    bot.remove_webhook()
+    bot.set_webhook(url=webhook_url)
+    return "Webhook set successfully!", 200
 
-def main():
-    try:
-        # Initialize and start the bot
-        bot = IPLLiveScoreBot(
-            bot_token=BOT_TOKEN, 
-            api_key=CRICAPI_API_KEY
-        )
-        bot.start_bot()
-    except Exception as e:
-        logger.critical(f"Bot initialization failed: {e}")
+# Health Check Route
+@app.route('/', methods=['GET'])
+def health_check():
+    """Basic health check endpoint"""
+    return "IPL Score Bot is running!", 200
 
 if __name__ == '__main__':
-    main()
-```
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
