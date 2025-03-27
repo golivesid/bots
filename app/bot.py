@@ -3,6 +3,7 @@ from flask import Flask, request
 import telebot
 import requests
 from dotenv import load_dotenv
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Load environment variables
 load_dotenv()
@@ -30,17 +31,24 @@ class IPLScoreBot:
             welcome_text = """
             🏏 IPL Live Score Bot 🏏
             
+            To get live ball-by-ball updates, join our channel: @terao2
+            
             Available Commands:
             /live_matches - Get current live matches
             /score <match_id> - Get live score for a specific match
             /help - Show help menu
             """
-            self.bot.reply_to(message, welcome_text)
+            # Create inline keyboard
+            markup = InlineKeyboardMarkup()
+            watch_button = InlineKeyboardButton("🏏 Watch IPL Live", url="https://t.me/terao2")
+            markup.add(watch_button)
+            
+            self.bot.reply_to(message, welcome_text, reply_markup=markup)
 
         @self.bot.message_handler(commands=['live_matches'])
         def list_live_matches(message):
             try:
-                # Fetch live matches (similar to previous implementation)
+                # Fetch live matches
                 matches = self.get_live_matches()
                 
                 if not matches:
@@ -53,7 +61,20 @@ class IPLScoreBot:
                     response += f"{match['team-1']} vs {match['team-2']}\n"
                     response += f"Status: {match.get('matchStarted', 'Not Started')}\n\n"
                 
-                self.bot.reply_to(message, response)
+                # Create inline keyboard for each match
+                markup = InlineKeyboardMarkup()
+                for match in matches:
+                    score_button = InlineKeyboardButton(
+                        f"Score: {match['team-1']} vs {match['team-2']}", 
+                        callback_data=f"score_{match['unique_id']}"
+                    )
+                    markup.add(score_button)
+                
+                # Add channel watch button
+                watch_button = InlineKeyboardButton("🏏 Watch Live Updates", url="https://t.me/terao2")
+                markup.add(watch_button)
+                
+                self.bot.reply_to(message, response, reply_markup=markup)
             
             except Exception as e:
                 self.bot.reply_to(message, f"Error fetching matches: {str(e)}")
@@ -74,10 +95,45 @@ class IPLScoreBot:
                     return
                 
                 response = self.format_score_response(score_details)
-                self.bot.reply_to(message, response)
+                
+                # Create inline keyboard
+                markup = InlineKeyboardMarkup()
+                watch_button = InlineKeyboardButton("🏏 Watch Live Updates", url="https://t.me/terao2")
+                markup.add(watch_button)
+                
+                self.bot.reply_to(message, response, reply_markup=markup)
             
             except Exception as e:
                 self.bot.reply_to(message, f"Error fetching score: {str(e)}")
+
+        # Callback query handler for inline buttons
+        @self.bot.callback_query_handler(func=lambda call: call.data.startswith('score_'))
+        def callback_score_query(call):
+            try:
+                match_id = call.data.split('_')[1]
+                score_details = self.get_live_score(match_id)
+                
+                if not score_details:
+                    self.bot.answer_callback_query(call.id, "Unable to fetch score.")
+                    return
+                
+                response = self.format_score_response(score_details)
+                
+                # Create inline keyboard
+                markup = InlineKeyboardMarkup()
+                watch_button = InlineKeyboardButton("🏏 Watch Live Updates", url="https://t.me/terao2")
+                markup.add(watch_button)
+                
+                self.bot.edit_message_text(
+                    chat_id=call.message.chat.id, 
+                    message_id=call.message.message_id, 
+                    text=response, 
+                    reply_markup=markup
+                )
+                self.bot.answer_callback_query(call.id)
+            
+            except Exception as e:
+                self.bot.answer_callback_query(call.id, f"Error: {str(e)}")
 
     def get_live_matches(self):
         try:
@@ -120,6 +176,7 @@ class IPLScoreBot:
             response += f"Score: {score_details.get('score', 'N/A')}\n"
             response += f"Status: {score_details.get('matchStarted', 'Not Started')}\n"
             response += f"Innings: {score_details.get('innings-name', 'N/A')}\n"
+            response += "\n📢 For ball-by-ball updates, join @terao2"
             
             return response
         
