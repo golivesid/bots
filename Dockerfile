@@ -17,4 +17,4 @@ EXPOSE 5000
 ENV GUNICORN_CMD_ARGS="--bind 0.0.0.0:5000"
 
 # Run the application with Gunicorn
-CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "bot:app"]
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "app:app"]
