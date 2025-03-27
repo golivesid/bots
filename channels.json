@@ -1,43 +1,11 @@
 {
     "channels": [
         {
-            "name": "Sports Channel",
-            "description": "Live sports events and matches from around the world",
-            "category": ["Sports", "Live Events"],
-            "url": "https://example.com/sports.m3u8",
-            "dash_url": "https://example.com/sports.mpd",
-            "drm": {
-                "clearkey": {
-                    "keyId": "sports-key-id",
-                    "key": "sports-encryption-key"
-                }
-            }
-        },
-        {
-            "name": "News Network",
-            "description": "24/7 global news coverage with breaking updates",
-            "category": ["News", "Information"],
-            "url": "https://example.com/news.m3u8", 
-            "dash_url": "https://example.com/news.mpd",
-            "drm": {
-                "clearkey": {
-                    "keyId": "news-key-id",
-                    "key": "news-encryption-key"
-                }
-            }
-        },
-        {
-            "name": "Movie Channel",
-            "description": "Latest movies and classic films from various genres",
-            "category": ["Movies", "Entertainment"],
-            "url": "https://example.com/movies.m3u8",
-            "dash_url": "https://example.com/movies.mpd", 
-            "drm": {
-                "clearkey": {
-                    "keyId": "movies-key-id",
-                    "key": "movies-encryption-key"
-                }
-            }
+            "name": "CNN",
+            "url": "https://example.com/cnn.m3u8",
+            "category": "News",
+            "drm_key_id": "",  // Optional
+            "drm_key": ""      // Optional
         }
     ]
 }
