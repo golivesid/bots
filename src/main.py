@@ -6,7 +6,7 @@ from flask import Flask, render_template, request
 from flask_cors import CORS
 
 # Environment Variables - Replace with your actual values
-BOT_TOKEN = os.environ.get('BOT_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN')
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU')
 CHANNELS_JSON_URL = os.environ.get('CHANNELS_JSON_URL', 'https://raw.githubusercontent.com/USER/REPO/main/channels.json')
 
 # Initialize Telegram Bot
