@@ -8,20 +8,17 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 # Load environment variables
 load_dotenv()
 
-# Flask Web Server for Webhook
-app = Flask(__name__)
-
 # Telegram Bot Configuration
 BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CRICKET_API_KEY = os.getenv('CRICKET_API_KEY')
 WEBHOOK_HOST = os.getenv('WEBHOOK_URL', 'https://your-koyeb-app-url.koyeb.app')
 
-# Initialize Telegram Bot
-bot = telebot.TeleBot(BOT_TOKEN)
+# Create Flask app BEFORE initializing other components
+app = Flask(__name__)
 
 class IPLScoreBot:
     def __init__(self, bot_token, cricket_api_key):
-        self.bot = bot
+        self.bot = telebot.TeleBot(bot_token)
         self.cricket_api_key = cricket_api_key
         self.register_handlers()
 
@@ -184,7 +181,7 @@ class IPLScoreBot:
             print(f"Error formatting score: {e}")
             return "Unable to format score details."
 
-# Initialize Bot
+# Initialize Bot AFTER creating Flask app
 ipl_bot = IPLScoreBot(BOT_TOKEN, CRICKET_API_KEY)
 
 # Webhook Route
@@ -193,7 +190,7 @@ def webhook():
     """Process webhook calls"""
     json_string = request.get_data().decode('utf-8')
     update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
+    ipl_bot.bot.process_new_updates([update])
     return "OK", 200
 
 # Set Webhook
@@ -201,8 +198,8 @@ def webhook():
 def set_webhook():
     """Set webhook for Telegram Bot"""
     webhook_url = f"{WEBHOOK_HOST}/{BOT_TOKEN}"
-    bot.remove_webhook()
-    bot.set_webhook(url=webhook_url)
+    ipl_bot.bot.remove_webhook()
+    ipl_bot.bot.set_webhook(url=webhook_url)
     return "Webhook set successfully!", 200
 
 # Health Check Route
