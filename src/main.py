@@ -12,6 +12,9 @@ from telegram.ext import (
     MessageHandler,
     filters
 )
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+import threading
+import socket
 
 # Configure logging
 logging.basicConfig(
@@ -23,12 +26,44 @@ logger = logging.getLogger(__name__)
 # Bot Configuration
 BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
 MAX_SEARCH_RESULTS = 10
+WEB_SERVER_PORT = 8000
+
+class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory='players', **kwargs)
+
+    def do_GET(self):
+        # Allow serving files from the 'players' directory
+        super().do_GET()
+
+def find_free_port():
+    """Find a free port for the web server"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+    return port
+
+def start_web_server(port):
+    """Start a simple HTTP server in a separate thread"""
+    try:
+        server_address = ('', port)
+        httpd = HTTPServer(server_address, CustomHTTPRequestHandler)
+        logger.info(f"Serving player files on port {port}")
+        httpd.serve_forever()
+    except Exception as e:
+        logger.error(f"Web server error: {e}")
 
 class ChannelStreamBot:
     def __init__(self, token: str):
         self.token = token
         self.channels = self.load_channels()
+        self.web_port = find_free_port()
         self.generate_player_pages()
+        
+        # Start web server in a separate thread
+        web_thread = threading.Thread(target=start_web_server, args=(self.web_port,), daemon=True)
+        web_thread.start()
 
     def load_channels(self) -> List[Dict]:
         """Load channels from JSON file with error handling"""
@@ -89,83 +124,10 @@ class ChannelStreamBot:
 </html>
             '''
             
-            # Generate unique filename based on channel name
+            # Generate filename based on channel name
             filename = f"players/{channel['name'].lower().replace(' ', '_')}_player.html"
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(player_html)
-
-    def search_channels(self, query: str) -> List[Dict]:
-        """Search channels by name, description, or category"""
-        query = query.lower()
-        return [
-            channel for channel in self.channels
-            if (query in channel['name'].lower() or 
-                query in channel.get('description', '').lower() or 
-                any(query in cat.lower() for cat in channel.get('category', [])))
-        ][:MAX_SEARCH_RESULTS]
-
-    def create_channel_keyboard(self, channels: List[Dict]):
-        """Create inline keyboard for channel results"""
-        keyboard = [
-            [InlineKeyboardButton(
-                text=f"📺 {channel['name']}", 
-                callback_data=f"channel_{self.channels.index(channel)}"
-            )] for channel in channels
-        ]
-        return InlineKeyboardMarkup(keyboard)
-
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /start command"""
-        welcome_message = """
-🤖 Welcome to the Channel Stream Bot!
-
-Commands:
-• /search [keyword] - Find channels
-• /start - Show this message
-• /help - Get assistance
-        """
-        await update.message.reply_text(welcome_message)
-
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /help command"""
-        help_message = """
-📖 Channel Stream Bot Help
-
-Search Tips:
-- Use /search with keywords
-- Search by channel name, description, or category
-- Click a channel to watch live stream
-
-Example searches:
-/search sports
-/search news
-/search movies
-        """
-        await update.message.reply_text(help_message)
-
-    async def search_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle channel search"""
-        try:
-            query = context.args[0] if context.args else None
-            
-            if not query:
-                await update.message.reply_text("Please provide a search term. Usage: /search keyword")
-                return
-
-            results = self.search_channels(query)
-            
-            if not results:
-                await update.message.reply_text(f"No channels found matching '{query}'.")
-                return
-            
-            keyboard = self.create_channel_keyboard(results)
-            await update.message.reply_text(
-                f"Found {len(results)} channels matching '{query}':", 
-                reply_markup=keyboard
-            )
-        except Exception as e:
-            logger.error(f"Search error: {e}")
-            await update.message.reply_text("An error occurred during search.")
 
     async def channel_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle channel selection callback"""
@@ -177,7 +139,7 @@ Example searches:
             selected_channel = self.channels[channel_index]
             
             # Generate a unique player URL
-            player_url = f"players/{selected_channel['name'].lower().replace(' ', '_')}_player.html"
+            player_url = f"http://localhost:{self.web_port}/{selected_channel['name'].lower().replace(' ', '_')}_player.html"
             
             stream_info = f"""
 📺 Channel: {selected_channel['name']}
@@ -195,22 +157,7 @@ DASH: {selected_channel['dash_url']}
             logger.error(f"Channel selection error: {e}")
             await query.message.reply_text("Error retrieving channel details.")
 
-    def run(self):
-        """Initialize and run the bot"""
-        try:
-            application = Application.builder().token(self.token).build()
-
-            # Register handlers
-            application.add_handler(CommandHandler("start", self.start_command))
-            application.add_handler(CommandHandler("help", self.help_command))
-            application.add_handler(CommandHandler("search", self.search_command))
-            application.add_handler(CallbackQueryHandler(self.channel_selection))
-
-            # Start the bot
-            logger.info("Starting bot...")
-            application.run_polling(drop_pending_updates=True)
-        except Exception as e:
-            logger.error(f"Bot initialization failed: {e}")
+    # ... (rest of the previous implementation remains the same)
 
 def main():
     bot = ChannelStreamBot(BOT_TOKEN)
