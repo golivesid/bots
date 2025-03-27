@@ -6,7 +6,7 @@ import threading
 
 # Telegram Bot Configuration
 class TelegramConfig:
-    BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'  # Replace with your actual bot token
+    BOT_TOKEN = '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU'  # Replace with your actual bot token
     STREAM_DETAILS_URL = 'https://raw.githubusercontent.com/your-username/your-repo/main/stream_details.json'
     CACHE_FILE = 'stream_details.json'
 
