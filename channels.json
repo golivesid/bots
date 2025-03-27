@@ -1,5 +1,72 @@
 {
-    "cnn": "https://example.com/cnn_stream",
-    "bbc": "https://example.com/bbc_stream",
-    "espn": "https://example.com/espn_stream"
+    "sports": {
+        "name": "Sports Channel",
+        "mpd": "https://example.com/sports/stream.mpd",
+        "mpd_key_id": "sports_mpd_key_id",
+        "mpd_key": "sports_mpd_key",
+        "m3u8": "https://example.com/sports/stream.m3u8",
+        "m3u8_key_id": "sports_m3u8_key_id",
+        "m3u8_key": "sports_m3u8_key",
+        "category": "Sports"
+    },
+    "news": {
+        "name": "Global News Network",
+        "mpd": "https://example.com/news/stream.mpd",
+        "mpd_key_id": "news_mpd_key_id",
+        "mpd_key": "news_mpd_key",
+        "m3u8": "https://example.com/news/stream.m3u8",
+        "m3u8_key_id": "news_m3u8_key_id",
+        "m3u8_key": "news_m3u8_key",
+        "category": "News"
+    },
+    "entertainment": {
+        "name": "Entertainment Weekly",
+        "mpd": "https://example.com/entertainment/stream.mpd",
+        "mpd_key_id": "entertainment_mpd_key_id",
+        "mpd_key": "entertainment_mpd_key",
+        "m3u8": "https://example.com/entertainment/stream.m3u8",
+        "m3u8_key_id": "entertainment_m3u8_key_id",
+        "m3u8_key": "entertainment_m3u8_key",
+        "category": "Entertainment"
+    },
+    "movie": {
+        "name": "Movie Max Channel",
+        "mpd": "https://example.com/movie/stream.mpd",
+        "mpd_key_id": "movie_mpd_key_id",
+        "mpd_key": "movie_mpd_key",
+        "m3u8": "https://example.com/movie/stream.m3u8",
+        "m3u8_key_id": "movie_m3u8_key_id",
+        "m3u8_key": "movie_m3u8_key",
+        "category": "Movies"
+    },
+    "music": {
+        "name": "Music Hits Channel",
+        "mpd": "https://example.com/music/stream.mpd",
+        "mpd_key_id": "music_mpd_key_id",
+        "mpd_key": "music_mpd_key",
+        "m3u8": "https://example.com/music/stream.m3u8",
+        "m3u8_key_id": "music_m3u8_key_id",
+        "m3u8_key": "music_m3u8_key",
+        "category": "Music"
+    },
+    "documentary": {
+        "name": "World Documentary",
+        "mpd": "https://example.com/documentary/stream.mpd",
+        "mpd_key_id": "documentary_mpd_key_id",
+        "mpd_key": "documentary_mpd_key",
+        "m3u8": "https://example.com/documentary/stream.m3u8",
+        "m3u8_key_id": "documentary_m3u8_key_id",
+        "m3u8_key": "documentary_m3u8_key",
+        "category": "Documentaries"
+    },
+    "kids": {
+        "name": "Kids Zone",
+        "mpd": "https://example.com/kids/stream.mpd",
+        "mpd_key_id": "kids_mpd_key_id",
+        "mpd_key": "kids_mpd_key",
+        "m3u8": "https://example.com/kids/stream.m3u8",
+        "m3u8_key_id": "kids_m3u8_key_id",
+        "m3u8_key": "kids_m3u8_key",
+        "category": "Children"
+    }
 }
