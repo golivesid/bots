@@ -1,27 +1,24 @@
-# Use an official Python runtime as a parent image
+# Dockerfile
 FROM python:3.9-slim
 
-# Set environment variables to prevent Python from writing pyc files and buffering stdout/stderr
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the requirements file first to leverage Docker cache
+# Copy requirements file
 COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install system dependencies and Python packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the entire project
+# Copy the application code
 COPY . .
 
-# Print contents of the directory to debug
-RUN ls -R /app
+# Expose port for web server
+EXPOSE 5000
 
-# Ensure the script is executable
-RUN chmod +x /app/src/main.py
-
-# Default command to run the application
-CMD ["python", "-u", "/app/src/main.py"]
+# Run the application
+CMD ["python", "main.py"]
