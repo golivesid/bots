@@ -1,1 +1,4 @@
-from main import application as app
+from main import application
+
+# This is the actual WSGI application that Gunicorn will use
+app = application
