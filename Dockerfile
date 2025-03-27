@@ -1,22 +1,20 @@
-# Use official Python runtime as base image
+# Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy project files
-COPY app/ .
-COPY requirements.txt .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port for web server
+# Make port 5000 available to the world outside this container
 EXPOSE 5000
 
-# Use gunicorn as production WSGI server
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "bot:app"]
+# Define environment variable for Gunicorn
+ENV GUNICORN_CMD_ARGS="--bind 0.0.0.0:5000"
+
+# Run the application with Gunicorn
+CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "bot:app"]
