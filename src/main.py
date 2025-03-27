@@ -9,7 +9,7 @@ from flask_cors import CORS
 BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
 
 # GitHub JSON file URL with channel information
-CHANNELS_JSON_URL = 'https://raw.githubusercontent.com/USER/REPO/main/channels.json'
+CHANNELS_JSON_URL = 'https://raw.githubusercontent.com/seeubot/bots/refs/heads/main/channels.json'
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(BOT_TOKEN)
