@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Configuration for stream details
 class StreamConfig:
     # GitHub raw file URL for stream details
-    STREAM_DETAILS_URL = 'https://raw.githubusercontent.com/your-username/your-repo/main/stream_details.json'
+    STREAM_DETAILS_URL = 'https://raw.githubusercontent.com/seeubot/bots/refs/heads/main/stream_details.json'
     
     # Local cache file to store stream details
     CACHE_FILE = 'stream_details.json'
