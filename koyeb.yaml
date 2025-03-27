@@ -1,0 +1,12 @@
+services:
+- name: ipl-score-bot
+  env:
+    - key: TELEGRAM_BOT_TOKEN
+      value: your_telegram_bot_token
+    - key: CRICKET_API_KEY
+      value: your_cricket_api_key
+    - key: WEBHOOK_URL
+      value: https://your-koyeb-app-url.koyeb.app
+  ports:
+    - port: 5000
+      protocol: http
