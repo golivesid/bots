@@ -1,167 +1,126 @@
-import logging
-import json
 import os
-import uuid
-from typing import List, Dict
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application, 
-    CommandHandler, 
-    CallbackQueryHandler, 
-    ContextTypes,
-    MessageHandler,
-    filters
-)
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import threading
-import socket
+import json
+import telebot
+import logging
+from flask import Flask, render_template, request, send_file
+from werkzeug.serving import run_simple
+import requests
 
-# Configure logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-    level=logging.INFO
-)
+# Load configuration
+with open('config.json', 'r') as config_file:
+    CONFIG = json.load(config_file)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Bot Configuration
-BOT_TOKEN = '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU'
-MAX_SEARCH_RESULTS = 10
-WEB_SERVER_PORT = 8000
+# Initialize Telegram Bot
+BOT_TOKEN = CONFIG.get('telegram_bot_token')
+bot = telebot.TeleBot(BOT_TOKEN)
 
-class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory='players', **kwargs)
+# Load channels from JSON
+def load_channels():
+    with open('channels.json', 'r') as f:
+        return json.load(f)
 
-    def do_GET(self):
-        # Allow serving files from the 'players' directory
-        super().do_GET()
+# Flask Web Server
+app = Flask(__name__)
 
-def find_free_port():
-    """Find a free port for the web server"""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))
-        s.listen(1)
-        port = s.getsockname()[1]
-    return port
+@app.route('/')
+def index():
+    channels = load_channels()
+    return render_template('index.html', channels=channels)
 
-def start_web_server(port):
-    """Start a simple HTTP server in a separate thread"""
+@app.route('/play')
+def play_channel():
+    channel_url = request.args.get('url')
+    return render_template('player.html', channel_url=channel_url)
+
+@app.route('/proxy_stream')
+def proxy_stream():
+    stream_url = request.args.get('url')
     try:
-        server_address = ('', port)
-        httpd = HTTPServer(server_address, CustomHTTPRequestHandler)
-        logger.info(f"Serving player files on port {port}")
-        httpd.serve_forever()
+        # Proxy the stream
+        response = requests.get(stream_url, stream=True)
+        return response.raw.read(), response.status_code, response.headers.items()
     except Exception as e:
-        logger.error(f"Web server error: {e}")
+        logger.error(f"Stream proxy error: {e}")
+        return "Stream unavailable", 500
 
-class ChannelStreamBot:
-    def __init__(self, token: str):
-        self.token = token
-        self.channels = self.load_channels()
-        self.web_port = find_free_port()
-        self.generate_player_pages()
+# Telegram Bot Handlers
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    channels = load_channels()
+    keyboard = telebot.types.ReplyKeyboardMarkup(row_width=3, resize_keyboard=True)
+    buttons = [telebot.types.KeyboardButton(channel['name']) for channel in channels]
+    keyboard.add(*buttons)
+    
+    welcome_message = "Welcome! Choose a channel to stream:"
+    bot.send_message(message.chat.id, welcome_message, reply_markup=keyboard)
+
+@bot.message_handler(func=lambda message: True)
+def handle_channel_selection(message):
+    channels = load_channels()
+    selected_channel = next((ch for ch in channels if ch['name'] == message.text), None)
+    
+    if selected_channel:
+        # Create inline keyboard for streaming methods
+        markup = telebot.types.InlineKeyboardMarkup()
         
-        # Start web server in a separate thread
-        web_thread = threading.Thread(target=start_web_server, args=(self.web_port,), daemon=True)
-        web_thread.start()
+        # Direct stream buttons
+        jwplayer_button = telebot.types.InlineKeyboardButton(
+            "JW Player Stream", 
+            callback_data=f"stream_jwplayer:{selected_channel['jwplayer_url']}"
+        )
+        m3u8_button = telebot.types.InlineKeyboardButton(
+            "M3U8 Stream", 
+            callback_data=f"stream_m3u8:{selected_channel['m3u8_url']}"
+        )
+        markup.row(jwplayer_button, m3u8_button)
+        
+        # Send message with streaming options
+        bot.send_message(
+            message.chat.id, 
+            f"Select streaming method for {selected_channel['name']}:", 
+            reply_markup=markup
+        )
+    else:
+        bot.reply_to(message, "Channel not found. Please choose from the list.")
 
-    def load_channels(self) -> List[Dict]:
-        """Load channels from JSON file with error handling"""
-        try:
-            with open('channels.json', 'r', encoding='utf-8') as file:
-                return json.load(file).get('channels', [])
-        except FileNotFoundError:
-            logger.error("Channels JSON file not found!")
-            return []
-        except json.JSONDecodeError:
-            logger.error("Invalid JSON format in channels file")
-            return []
+@bot.callback_query_handler(func=lambda call: call.data.startswith('stream_'))
+def handle_stream_callback(call):
+    try:
+        # Parse the callback data
+        stream_type, stream_url = call.data.split(':')
+        
+        # Create an inline keyboard for the stream
+        markup = telebot.types.InlineKeyboardMarkup()
+        web_player_button = telebot.types.InlineKeyboardButton(
+            "Open Web Player", 
+            url=f"https://your-domain.com/play?url={stream_url}"
+        )
+        markup.add(web_player_button)
+        
+        # Send a message with the stream details
+        bot.answer_callback_query(call.id, "Preparing stream...")
+        bot.send_message(
+            call.message.chat.id, 
+            f"Stream URL: {stream_url}\n\n"
+            "Click 'Open Web Player' to watch:",
+            reply_markup=markup
+        )
+    except Exception as e:
+        logger.error(f"Stream callback error: {e}")
+        bot.answer_callback_query(call.id, "Error processing stream")
 
-    def generate_player_pages(self):
-        """Generate individual HTML player pages for each channel"""
-        # Create players directory if it doesn't exist
-        os.makedirs('players', exist_ok=True)
-
-        for channel in self.channels:
-            player_html = f'''
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{channel['name']} - Stream Player</title>
-    <script src="https://content.jwplatform.com/libraries/SAHhwvZq.js"></script>
-    <style>
-        body {{ margin: 0; padding: 0; }}
-        #player {{ width: 100%; height: 100vh; }}
-    </style>
-</head>
-<body>
-    <div id="player"></div>
-    <script>
-        jwplayer("player").setup({{
-            sources: [
-                {{
-                    file: "{channel['url']}",
-                    type: "hls"
-                }},
-                {{
-                    file: "{channel['dash_url']}",
-                    type: "dash",
-                    drm: {{
-                        "clearkey": {{
-                            "keyId": "{channel['drm']['clearkey']['keyId']}",
-                            "key": "{channel['drm']['clearkey']['key']}"
-                        }}
-                    }}
-                }}
-            ],
-            width: "100%",
-            height: "100%",
-            autostart: true,
-            controls: true
-        }});
-    </script>
-</body>
-</html>
-            '''
-            
-            # Generate filename based on channel name
-            filename = f"players/{channel['name'].lower().replace(' ', '_')}_player.html"
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(player_html)
-
-    async def channel_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle channel selection callback"""
-        query = update.callback_query
-        await query.answer()
-
-        try:
-            channel_index = int(query.data.split('_')[1])
-            selected_channel = self.channels[channel_index]
-            
-            # Generate a unique player URL
-            player_url = f"http://localhost:{self.web_port}/{selected_channel['name'].lower().replace(' ', '_')}_player.html"
-            
-            stream_info = f"""
-📺 Channel: {selected_channel['name']}
-
-Click the link below to watch the stream:
-{player_url}
-
-Stream Links:
-HLS: {selected_channel['url']}
-DASH: {selected_channel['dash_url']}
-            """
-            
-            await query.message.reply_text(stream_info)
-        except Exception as e:
-            logger.error(f"Channel selection error: {e}")
-            await query.message.reply_text("Error retrieving channel details.")
-
-    # ... (rest of the previous implementation remains the same)
-
-def main():
-    bot = ChannelStreamBot(BOT_TOKEN)
-    bot.run()
+def start_bot_and_server():
+    # Start Flask server in a separate thread
+    from threading import Thread
+    flask_thread = Thread(target=lambda: run_simple('0.0.0.0', 5000, app))
+    flask_thread.start()
+    
+    # Start Telegram Bot
+    bot.polling(none_stop=True)
 
 if __name__ == '__main__':
-    main()
+    start_bot_and_server()
