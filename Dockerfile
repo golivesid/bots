@@ -1,24 +1,22 @@
-# Dockerfile
+# Use official Python runtime as base image
 FROM python:3.9-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy requirements file
+# Copy project files
+COPY app/ .
 COPY requirements.txt .
 
-# Install system dependencies and Python packages
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the application code
-COPY . .
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose port for web server
 EXPOSE 5000
 
-# Run the application
-CMD ["python", "main.py"]
+# Use gunicorn as production WSGI server
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "bot:app"]
