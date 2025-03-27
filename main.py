@@ -80,6 +80,3 @@ if __name__ == '__main__':
         port=5000,       # Default port
         debug=True       # Enable debug mode for development
     )
-
-# For production, use a WSGI server like Gunicorn
-# Command: gunicorn -w 4 -b 0.0.0.0:5000 main:app
