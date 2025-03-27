@@ -6,7 +6,7 @@ from flask import Flask, render_template, request
 from flask_cors import CORS
 
 # Telegram Bot Token - Replace with your actual bot token
-BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+BOT_TOKEN = '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU'
 
 # GitHub JSON file URL with channel information
 CHANNELS_JSON_URL = 'https://raw.githubusercontent.com/seeubot/bots/refs/heads/main/channels.json'
