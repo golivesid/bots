@@ -4,6 +4,7 @@ import telebot
 import requests
 from dotenv import load_dotenv
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from werkzeug.urls import quote as url_quote  # Added this import to replace the missing url_quote
 
 # Load environment variables
 load_dotenv()
@@ -14,7 +15,7 @@ app = Flask(__name__)
 # Telegram Bot Configuration
 BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CRICKET_API_KEY = os.getenv('CRICKET_API_KEY')
-WEBHOOK_HOST = os.getenv('WEBHOOK_URL', 'https://your-koyeb-app-url.koyeb.app')
+WEBHOOK_HOST = os.getenv('WEBHOOK_URL', 'https://your-koyeb-app-url.koyeb.ap')
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(BOT_TOKEN)
