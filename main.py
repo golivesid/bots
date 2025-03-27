@@ -1,4 +1,3 @@
-```python
 import os
 import telebot
 import requests
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # API Configuration
 CRICAPI_API_KEY = '7c96d07c-0e63-4d5d-a2b4-dc9520ba9492'  # Get from cricapi.com
-BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+BOT_TOKEN = '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU'
 
 class IPLLiveScoreBot:
     def __init__(self, bot_token, api_key):
