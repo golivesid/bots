@@ -5,11 +5,9 @@ import telebot
 from flask import Flask, render_template, request
 from flask_cors import CORS
 
-# Telegram Bot Token - Replace with your actual bot token
-BOT_TOKEN = '8063753854:AAE4mAxHO1X4xV0X_l334rS_rZJ_NWQz3VU'
-
-# GitHub JSON file URL with channel information
-CHANNELS_JSON_URL = 'https://raw.githubusercontent.com/seeubot/bots/refs/heads/main/channels.json'
+# Environment Variables - Replace with your actual values
+BOT_TOKEN = os.environ.get('BOT_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN')
+CHANNELS_JSON_URL = os.environ.get('CHANNELS_JSON_URL', 'https://raw.githubusercontent.com/USER/REPO/main/channels.json')
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -25,9 +23,9 @@ def fetch_channels():
         return response.json()
     except Exception as e:
         print(f"Error fetching channels: {e}")
-        return {}
+        return {"channels": []}
 
-# Telegram Bot Commands (same as previous version)
+# Telegram Bot Commands
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     welcome_text = """
@@ -63,7 +61,7 @@ def play_channel(message):
         if matching_channels:
             channel = matching_channels[0]
             # Support multiple player types
-            player_url = f"/player?url={channel['url']}&drm_key_id={channel.get('drm_key_id', '')}&drm_key={channel.get('drm_key', '')}"
+            player_url = f"/player?url={channel.get('url', '')}&drm_key_id={channel.get('drm_key_id', '')}&drm_key={channel.get('drm_key', '')}"
             response = f"Playing {channel['name']}\nClick the link to watch: {player_url}"
             bot.reply_to(message, response)
         else:
@@ -82,8 +80,13 @@ def video_player():
                            drm_key_id=drm_key_id, 
                            drm_key=drm_key)
 
-# HTML5 Video Player Template with JW Player and HLS Support
+# Create templates directory and player template
 def create_player_template():
+    import os
+    
+    # Ensure templates directory exists
+    os.makedirs('templates', exist_ok=True)
+    
     player_html = """
 <!DOCTYPE html>
 <html lang="en">
@@ -202,24 +205,22 @@ def create_player_template():
 </html>
     """
     
-    # Ensure templates directory exists
-    os.makedirs('templates', exist_ok=True)
-    
     # Write player template
     with open('templates/player.html', 'w') as f:
         f.write(player_html)
 
-# Rest of the code remains the same as in the previous version
-# (Bot commands, main execution, etc.)
-
 # Main execution
-if __name__ == '__main__':
+def main():
+    # Create player template
     create_player_template()
     
     # Start bot in a separate thread
     import threading
-    bot_thread = threading.Thread(target=bot.polling)
+    bot_thread = threading.Thread(target=bot.polling, daemon=True)
     bot_thread.start()
     
     # Run Flask web server
-    app.run(port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+if __name__ == '__main__':
+    main()
