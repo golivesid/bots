@@ -1,14 +1,14 @@
 [
     {
-        "name": "Sports Channel",
-        "streamUrl": "https://example.com/sports/stream.mpd",
-        "drmKeyId": "your-drm-key-id-1",
-        "drmKey": "your-drm-decryption-key-1"
+        "name": "KTV!",
+        "streamUrl": "https://livestream.sunnxt.com/61477b4c8d8d45d5a49e044cc1dffc60/KTVHDB_IN_index.mpd",
+        "drmKeyId": "3bd646753f4903eee3b404646c7819d3",
+        "drmKey": "351e547391bb45cbac66d2cb9ec0c294"
     },
     {
-        "name": "News Channel",
-        "streamUrl": "https://example.com/news/stream.mpd",
-        "drmKeyId": "your-drm-key-id-2", 
-        "drmKey": "your-drm-decryption-key-2"
+        "name": "KTV@",
+        "streamUrl": "https://livestream.sunnxt.com/61477b4c8d8d45d5a49e044cc1dffc60/KTVHDB_IN_index.mpd",
+        "drmKeyId": "351e547391bb45cbac66d2cb9ec0c294", 
+        "drmKey": "3bd646753f4903eee3b404646c7819d3"
     }
 ]
