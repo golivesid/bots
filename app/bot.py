@@ -15,7 +15,7 @@ app = Flask(__name__)
 # Telegram Bot Configuration
 BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 CRICKET_API_KEY = os.getenv('CRICKET_API_KEY')
-WEBHOOK_HOST = os.getenv('WEBHOOK_URL', 'https://your-koyeb-app-url.koyeb.ap')
+WEBHOOK_HOST = os.getenv('WEBHOOK_URL', 'https://your-koyeb-app-url.koyeb.app')
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(BOT_TOKEN)
