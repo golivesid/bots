@@ -4,7 +4,6 @@ import telebot
 import requests
 from dotenv import load_dotenv
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from werkzeug.urls import quote as url_quote  # Added this import to replace the missing url_quote
 
 # Load environment variables
 load_dotenv()
@@ -214,4 +213,4 @@ def health_check():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='https://hushed-nance-seeutech-79662458.koyeb.app', port=port)
+    app.run(host='0.0.0.0', port=port)
