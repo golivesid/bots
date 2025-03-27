@@ -1,5 +1,14 @@
-{
-    "file_url": "https://example.com/your-stream-url.mpd",
-    "keyId": "your-key-id-here",
-    "key": "your-encryption-key-here"
-}
+[
+    {
+        "name": "Sports Channel",
+        "streamUrl": "https://example.com/sports/stream.mpd",
+        "drmKeyId": "your-drm-key-id-1",
+        "drmKey": "your-drm-decryption-key-1"
+    },
+    {
+        "name": "News Channel",
+        "streamUrl": "https://example.com/news/stream.mpd",
+        "drmKeyId": "your-drm-key-id-2", 
+        "drmKey": "your-drm-decryption-key-2"
+    }
+]
