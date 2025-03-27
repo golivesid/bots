@@ -1,0 +1,5 @@
+{
+    "file": "https://example.com/your-stream-url.mpd",
+    "keyId": "your-key-id-here",
+    "key": "your-encryption-key-here"
+}
