@@ -2,81 +2,100 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Video Stream Player</title>
-    <script src="https://content.jwplatform.com/libraries/SAHhwvZq.js"></script>
+    <title>DRM Live TV Channel Player</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            text-align: center;
+            background-color: #f4f4f4;
         }
-        #jwplayerDiv {
+        #player-container {
             width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 720px;
+            margin: 20px auto;
         }
-        #loadingMessage {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #333;
+        #channel-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .channel-button {
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .channel-button:hover {
+            background-color: #2980b9;
         }
     </style>
 </head>
 <body>
-    <h1>Live Video Stream</h1>
-    <div id="jwplayerDiv"></div>
-    <div id="loadingMessage">Loading stream details...</div>
+    <div id="player-container">
+        <div id="jwplayerDiv"></div>
+    </div>
+    <div id="channel-list"></div>
 
+    <script src="https://content.jwplatform.com/libraries/SAHhwvZq.js"></script>
     <script>
-        // Function to fetch stream details from server
-        async function fetchStreamDetails() {
-            try {
-                const response = await fetch('/stream-details');
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+        // GitHub JSON file URL (replace with your actual GitHub raw JSON file URL)
+        const CHANNELS_JSON_URL = 'https://raw.githubusercontent.com/seeubot/bots/refs/heads/main/channels.json';
+
+        // Initialize JW Player
+        const player = jwplayer("jwplayerDiv").setup({
+            width: '100%',
+            aspectratio: '16:9',
+            file: '',
+            type: 'dash',
+            drm: {
+                "clearkey": {
+                    "keyId": "",
+                    "key": ""
                 }
-                
-                const streamDetails = await response.json();
-                
-                // Setup JW Player with fetched details
-                setupPlayer(streamDetails);
-            } catch (error) {
-                console.error('Error fetching stream details:', error);
-                document.getElementById('loadingMessage').textContent = 'Failed to load stream. Please check the server.';
             }
-        }
+        });
 
-        // Function to setup JW Player
-        function setupPlayer(streamDetails) {
+        // Fetch channels from JSON
+        async function fetchChannels() {
             try {
-                // Hide loading message
-                document.getElementById('loadingMessage').style.display = 'none';
-
-                // Setup JW Player with details from server
-                jwplayer("jwplayerDiv").setup({
-                    file: streamDetails.file || "",
-                    type: "dash",
-                    drm: {
-                        "clearkey": {
-                            "keyId": streamDetails.keyId || "",
-                            "key": streamDetails.key || ""
-                        }
-                    },
-                    width: "100%",
-                    height: "500px"
+                const response = await fetch(CHANNELS_JSON_URL);
+                const channels = await response.json();
+                
+                const channelList = document.getElementById('channel-list');
+                channels.forEach(channel => {
+                    const button = document.createElement('button');
+                    button.textContent = channel.name;
+                    button.className = 'channel-button';
+                    button.addEventListener('click', () => loadChannel(channel));
+                    channelList.appendChild(button);
                 });
             } catch (error) {
-                console.error('Error setting up player:', error);
-                document.getElementById('loadingMessage').textContent = 'Failed to initialize player.';
+                console.error('Error fetching channels:', error);
             }
         }
 
-        // Fetch stream details when page loads
-        fetchStreamDetails();
+        // Load selected channel
+        function loadChannel(channel) {
+            player.setup({
+                file: channel.streamUrl,
+                type: 'dash',
+                drm: {
+                    "clearkey": {
+                        "keyId": channel.drmKeyId,
+                        "key": channel.drmKey
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        fetchChannels();
     </script>
 </body>
 </html>
